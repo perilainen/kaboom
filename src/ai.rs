@@ -4,7 +4,7 @@ use specs::{Join, ReadStorage, System, WriteStorage};
 
 use crate::components::{Enemy, Velocity};
 
-const ENEMY_MOVEMENT_SPEED: i32 = 3;
+// const ENEMY_MOVEMENT_SPEED: i32 = 3;
 
 pub struct AI;
 

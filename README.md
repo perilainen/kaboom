@@ -1,5 +1,5 @@
 ## Introduction
-Kaboom is a game....
+Kaboom is a game written in rust.
 
 ### Building/Developing
 Make sure to install sdl2.
@@ -18,3 +18,6 @@ Entity Component System:
 
 Graphics:
 [sdl2](https://github.com/Rust-SDL2/rust-sdl2)
+
+### Inspiration / Learning Material
+[Learn game development](https://sunjay.dev/learn-game-dev/intro.html)

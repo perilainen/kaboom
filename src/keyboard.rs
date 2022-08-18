@@ -6,7 +6,7 @@ use crate::{
     MovementCommand,
 };
 
-const PLAYER_MOVEMENT_SPEED: i32 = 6;
+// const PLAYER_MOVEMENT_SPEED: i32 = 6;
 
 pub struct Keyboard;
 

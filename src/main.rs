@@ -12,7 +12,7 @@ use sdl2::image::{self, InitFlag, LoadTexture};
 use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
-use sdl2::render::{Texture, WindowCanvas};
+
 use specs::{Builder, DispatcherBuilder, World, WorldExt};
 use std::time::Duration;
 
@@ -190,7 +190,8 @@ fn main() -> Result<(), String> {
     // .build();
 
     let mut event_pump = sdl_context.event_pump()?;
-    let mut i = 0;
+    // let mut i = 0;
+    let i = 87;
     let mut ii = 0;
     'running: loop {
         ii += 1;
