@@ -21,3 +21,5 @@ Graphics:
 
 ### Inspiration / Learning Material
 [Learn game development](https://sunjay.dev/learn-game-dev/intro.html)
+
+[animated png](http://finalbossblues.com/timefantasy/free-graphics/)

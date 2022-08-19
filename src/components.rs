@@ -31,6 +31,12 @@ pub struct Velocity {
     pub mo_speed: i32,
 }
 
+#[derive(Component, Debug)]
+#[storage(VecStorage)]
+pub struct Health {
+    pub health: i32,
+}
+
 #[derive(Component, Debug, Clone)]
 #[storage(VecStorage)]
 pub struct Sprite {

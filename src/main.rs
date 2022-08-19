@@ -2,11 +2,14 @@ use rand::Rng;
 mod ai;
 mod animator;
 mod components;
+mod crash;
 mod keyboard;
 mod physics;
 mod renderer;
 
 use rand::thread_rng;
+use sdl2::audio::AudioCallback;
+use sdl2::audio::AudioSpecDesired;
 use sdl2::event::Event;
 use sdl2::image::{self, InitFlag, LoadTexture};
 use sdl2::keyboard::Keycode;
@@ -85,6 +88,7 @@ fn initialize_player(world: &mut World, player_spritesheet: usize) {
         .create_entity()
         .with(KeyboardControlled)
         .with(Position(Point::new(0, 0)))
+        .with(Health { health: 100 })
         .with(Velocity {
             speed: 0,
             direction: Direction::Right,
@@ -95,8 +99,8 @@ fn initialize_player(world: &mut World, player_spritesheet: usize) {
         .build();
 }
 
-fn initialize_enemy(world: &mut World, enemy_spritesheet: usize, position: Point) {
-    let enemy_top_left_frame = Rect::new(0, 0, 32, 36);
+fn initialize_enemy(world: &mut World, enemy_spritesheet: usize, position: Point, enemy_no: usize) {
+    let enemy_top_left_frame = Rect::new(0 + (enemy_no as i32 * 3 * 52), 0, 52, 72);
 
     let enemy_animation = MovementAnimation {
         current_frame: 0,
@@ -138,15 +142,52 @@ fn initialize_enemy(world: &mut World, enemy_spritesheet: usize, position: Point
         .build();
 }
 
+struct SquareWave {
+    phase_inc: f32,
+    phase: f32,
+    volume: f32,
+}
+
+impl AudioCallback for SquareWave {
+    type Channel = f32;
+
+    fn callback(&mut self, out: &mut [f32]) {
+        for x in out.iter_mut() {
+            *x = if self.phase <= 0.5 {
+                self.volume
+            } else {
+                -self.volume
+            };
+            self.phase = (self.phase + self.phase_inc) % 1.0;
+        }
+    }
+}
+
 fn main() -> Result<(), String> {
     let sdl_context = sdl2::init()?;
     let video_subsystem = sdl_context.video().unwrap();
+    let audio_subsystem = sdl_context.audio().unwrap();
+    let desired_spec = AudioSpecDesired {
+        freq: Some(44100),
+        channels: Some(1),
+        samples: None,
+    };
+    let device = audio_subsystem.open_playback(None, &desired_spec, |spec| {
+        println!("{:?}", spec);
+        SquareWave {
+            phase_inc: 440.0 / spec.freq as f32,
+            phase: 0.0,
+            volume: 0.05,
+        }
+    })?;
+    // device.resume();
 
     let _image_context = image::init(InitFlag::PNG | InitFlag::JPG)?;
 
     let window = video_subsystem
         .window("game tutorial", 800, 600)
         .position_centered()
+        .opengl()
         .build()
         .expect("could not init video");
 
@@ -156,51 +197,37 @@ fn main() -> Result<(), String> {
     let textures = [
         texture_creator.load_texture("assets/bardo.png")?,
         texture_creator.load_texture("assets/reaper.png")?,
+        texture_creator.load_texture("assets/motw.png")?,
     ];
     let player_spritesheet = 0;
-    let enemy_spritesheet = 1;
+    let enemy_spritesheet = 2;
     let mut world = World::new();
     world.insert(movement_command);
     let mut dispatcher = DispatcherBuilder::new()
         .with(ai::AI, "AI", &[])
         .with(keyboard::Keyboard, "Keyboard", &[])
+        .with(crash::Crash, "Crash", &[])
         .with(physics::Physics, "Physics", &["Keyboard", "AI"])
         .with(animator::Animator, "Animator", &["Keyboard", "AI"])
         .build();
 
     dispatcher.setup(&mut world);
     initialize_player(&mut world, player_spritesheet);
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, -150));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(150, -190));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, 170));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, 170));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, 170));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, 170));
-    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(-150, 170));
-    // world
-    //     .create_entity()
-    //     .with(KeyboardControlled)
-    //     .with(Position(Point::new(0, 0)))
-    //     .with(Velocity {
-    //         speed: 0,
-    //     direction: Direction::Right,
-    // })
-    // .with(player_animation.right_frames[0].clone())
-    // .with(player_animation)
-    // .build();
 
     let mut event_pump = sdl_context.event_pump()?;
-    // let mut i = 0;
     let i = 87;
     let mut ii = 0;
+    // initialize_enemy(&mut world, enemy_spritesheet, Point::new(0, 0));
     'running: loop {
+        // std::thread::sleep(Duration::from_secs(2));
         ii += 1;
         if ii % 100 == 0 {
             let mut rng = thread_rng();
             let x = rng.gen_range(-400..400);
             let y = rng.gen_range(-300..300);
+            let enemy = rng.gen_range(0..4);
 
-            initialize_enemy(&mut world, enemy_spritesheet, Point::new(x, y));
+            initialize_enemy(&mut world, enemy_spritesheet, Point::new(x, y), enemy);
             ii = 0
         }
         let mut movement_command = None;
