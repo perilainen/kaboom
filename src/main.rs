@@ -17,10 +17,12 @@ use sdl2::pixels::Color;
 use sdl2::rect::{Point, Rect};
 
 use specs::{Builder, DispatcherBuilder, World, WorldExt};
+use std::collections::VecDeque;
 use std::time::Duration;
 
 use crate::components::*;
 
+#[derive(Debug, PartialEq, Copy, Clone)]
 pub enum MovementCommand {
     Stop,
     Move(Direction),
@@ -217,6 +219,10 @@ fn main() -> Result<(), String> {
     let mut event_pump = sdl_context.event_pump()?;
     let i = 87;
     let mut ii = 0;
+    // let arrows_pressed: VecDeque<Direction> = VecDeque::with_capacity(4);
+    let mut arrows_pressed = VecDeque::new();
+    arrows_pressed.push_back(Some(MovementCommand::Stop));
+
     // initialize_enemy(&mut world, enemy_spritesheet, Point::new(0, 0));
     'running: loop {
         // std::thread::sleep(Duration::from_secs(2));
@@ -245,53 +251,59 @@ fn main() -> Result<(), String> {
                     repeat: false,
                     ..
                 } => {
+                    arrows_pressed.push_back(Some(MovementCommand::Move(Direction::Left)));
                     movement_command = Some(MovementCommand::Move(Direction::Left));
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Up),
+                    repeat: false,
                     ..
                 } => {
+                    arrows_pressed.push_back(Some(MovementCommand::Move(Direction::Up)));
                     movement_command = Some(MovementCommand::Move(Direction::Up));
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Down),
+                    repeat: false,
                     ..
                 } => {
+                    arrows_pressed.push_back(Some(MovementCommand::Move(Direction::Down)));
                     movement_command = Some(MovementCommand::Move(Direction::Down));
                 }
                 Event::KeyDown {
                     keycode: Some(Keycode::Right),
+                    repeat: false,
                     ..
                 } => {
+                    arrows_pressed.push_back(Some(MovementCommand::Move(Direction::Right)));
                     movement_command = Some(MovementCommand::Move(Direction::Right));
                 }
+
                 Event::KeyUp {
                     keycode: Some(Keycode::Left),
                     repeat: false,
                     ..
-                }
-                | Event::KeyUp {
+                } => arrows_pressed.retain(|m| m != &Some(MovementCommand::Move(Direction::Left))),
+                Event::KeyUp {
                     keycode: Some(Keycode::Right),
                     repeat: false,
                     ..
-                }
-                | Event::KeyUp {
+                } => arrows_pressed.retain(|m| m != &Some(MovementCommand::Move(Direction::Right))),
+                Event::KeyUp {
                     keycode: Some(Keycode::Down),
                     repeat: false,
                     ..
-                }
-                | Event::KeyUp {
+                } => arrows_pressed.retain(|m| m != &Some(MovementCommand::Move(Direction::Down))),
+                Event::KeyUp {
                     keycode: Some(Keycode::Up),
                     repeat: false,
                     ..
-                } => {
-                    movement_command = Some(MovementCommand::Stop);
-                }
+                } => arrows_pressed.retain(|m| m != &Some(MovementCommand::Move(Direction::Up))),
 
                 _ => {}
             }
         }
-        *world.write_resource() = movement_command;
+        *world.write_resource() = arrows_pressed.back().cloned().unwrap();
         // i = (i + 1) % 255;
         // dispatcher.dispatch(&mut world);
         dispatcher.dispatch(&world);

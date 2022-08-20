@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use specs::{Entities, Join, ReadStorage, System, WriteStorage};
 
 use crate::components::{Health, Position};
@@ -19,7 +21,8 @@ impl<'a> System<'a> for Crash {
             let playery = player.1 .0.y;
             // println!("{:?}", healt.unwrap());
 
-            for (_, pos) in all {
+            for (ent, pos) in all {
+                // ent.delete();
                 if pos.0.x + 15 >= playerx - 5
                     && pos.0.x - 15 <= playerx + 5
                     && pos.0.y + 40 >= playery - 11
@@ -29,6 +32,9 @@ impl<'a> System<'a> for Crash {
                         "posx:{},posy:{},playerx:{}, playery:{}",
                         pos.0.x, pos.0.y, playerx, playery
                     );
+                    let _ = data.0.delete(ent);
+                    // std::thread::sleep(Duration::from_secs(1));
+
                     healt.health -= 1;
                 }
             }
